@@ -129,9 +129,23 @@ class PipLess(object):
             self._debug("no_venv was set, not activating")
             return
 
+        # this will setup things in the environment that we'll copy over
         self._debug("activating virtual environment at {}".format(self.venv_home))
         activate_script = self._os.path.join(self.venv_home, "bin", "activate_this.py")
         execfile(activate_script, dict(__file__=activate_script))
+
+        self._os.environ["VIRTUAL_ENV"] = self._os.path.abspath(self._os.path.join(self.venv_home))
+        self._sys.executable = self._os.path.join(self.venv_home, "bin", "python")
+        self._os.environ["_"] = self._sys.executable
+
+        new_environ = dict(os.environ)
+
+        venv_python_path = os.path.join(self.venv_home, "bin", "python")
+        os.execve(
+            venv_python_path,
+            ["-m", __file__] + sys.argv,
+            new_environ
+        )
 
         self._os.environ["VIRTUAL_ENV"] = self._os.path.abspath(self._os.path.join(self.venv_home))
         self._sys.executable = self._os.path.join(self.venv_home, "bin", "python")
