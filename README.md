@@ -24,7 +24,7 @@ No more must python developers go through the rote project lifecycle steps of
 * Creating a virtual environment
 * Activating it
 * Manually updating the requirements.txt when it's realized that additional packages are needed
-* Don't forget to run `pip freeze` to pin your requirements to specific versions!
+* Not forgetting to run `pip freeze` to pin your requirements to specific versions!
 
 ## Usage
 
