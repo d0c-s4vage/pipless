@@ -26,6 +26,9 @@ No more must python developers go through the rote project lifecycle steps of
 * Manually updating the requirements.txt when it's realized that additional packages are needed
 * Not forgetting to run `pip freeze` to pin your requirements to specific versions!
 
+Not only does it perform all the above steps for you, it does it *WITHOUT REQUIRING
+ANY CODE CHANGES*
+
 ## Usage
 
 In most situations `pipless` can be used as a drop-in replacement for directly
