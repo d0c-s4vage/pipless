@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Created by James "d0c_s4vage" Johnson
+# https://github.com/d0c-s4vage/pipless
+# MIT License
 
 """
-Simple wrapper that runs the main pipless module
+A simple wrapper that runs the main pipless module
 """
 
 

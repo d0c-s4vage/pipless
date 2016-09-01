@@ -1,35 +1,50 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Created by James "d0c_s4vage" Johnson
+# https://github.com/d0c-s4vage/pipless
+# MIT License
 
 
 """
-TL;DR pipless creates/activates a virtualenv in which . When the
-requiring code modification.
+               ░░┐            ▄▄▄       ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄ 
+              ░░┌┘           ▐░░░▌     ▐░░░░░░░░░▌ ▐░░░░░░░░░▌ ▐░░░░░░░░░▌
+             ░░┌┘            ▐░░░▌     ▐░░░▛▀▀▀▀▀  ▐░░░▛▀▀▀▀▀  ▐░░░▛▀▀▀▀▀ 
+ +━━+        └─┘ +━━+        ▐░░░▌     ▐░░░▌       ▐░░░▌       ▐░░░▌      
+ ┃╳╳━━━━━━━+ +━+ ┃╳╳━━━━━━━+ ▐░░░▌     ▐░░░▙▄▄▄▄▄  ▐░░░▙▄▄▄▄▄  ▐░░░▙▄▄▄▄▄ 
+ ┃╳╳┃      ┃ ┃╳┃ ┃╳╳┃      ┃ ▐░░░▌     ▐░░░░░░░░░▌ ▐░░░░░░░░░▌ ▐░░░░░░░░░▌
+ ┃╳╳┃      ┃ ┃╳┃ ┃╳╳┃      ┃ ▐░░░▌     ▐░░░▛▀▀▀▀▀   ▀▀▀▀▀▜░░░▌  ▀▀▀▀▀▜░░░▌
+ ┃╳╳━━━━━━━+ +━+ ┃╳╳━━━━━━━+ ▐░░░▌     ▐░░░▌             ▐░░░▌       ▐░░░▌
+ ┃╳╳┃            ┃╳╳┃        ▟░░░▙▄▄▄▄▄▟░░░▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟░░░▙▄▄▄▄▄▄▄▟░░░▌
+ ┃╳╳┃            ┃╳╳┃       ▐░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▌
+ +━━+            +━━+        ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ 
 
-pipless hooks the import process and automatically installs packages
-if they are not present in the current environment. By default
-pipless will create a virtual environment into which packages
-are installed.
 
-The pipless module is intended to be run with the "-m" argument to
-the python executable:
+pipless creates/activates a virtualenv in which the python process
+will operate. pipless hooks the import process and automatically
+installs missing packages into the current environment.  On process
+exit, pipless will generate a new requirements.txt in the same
+directory that the virtual env folder exists in.
 
-    python -m pipless [script_path [args..]]
+pipless can be used in three ways:
 
-If no script path is given, pipless will drop the user into an
-interactive shell after activating a virtual environment and setting
-up the pipless import hooks.
+1. To directly run scripts:
 
-If a script path is given, the pipless import hooks will be installed
-prior to running the script.
+        pipless test.py --arg1 --arg2 val
 
-pipless can also be explicitly imported into the source code. Doing
-so will install the necessary hooks and activate the virtual
-environment.
+2. Interactively. Running pipless without a script will drop you
+   into an interactive shell:
 
-The pipless experience becomes especially seamless when an alias
-is made for python in your ~/.bashrc. E.g. alias python="python
--m pipless"
+        /tmp $ pipless
+        Python 2.7.10 (default, Oct 14 2015, 16:09:02) 
+        [GCC 5.2.1 20151010] on linux2
+        Type "help", "copyright", "credits" or "license" for more information.
+        (InteractiveConsole)
+        >>> 
+        
+3. Importing and manually initializing pipless:
+
+        import pipless
+        pipless.init(..opts..)
 
 See https://github.com/d0c-s4vage/pipless for more details.
 """
@@ -156,18 +171,6 @@ class PipLess(object):
             new_environ
         )
 
-        #self._debug("this should never happen")
-
-        #self._os.environ["VIRTUAL_ENV"] = self._os.path.abspath(self._os.path.join(self.venv_home))
-        #self._sys.executable = self._os.path.join(self.venv_home, "bin", "python")
-        #self._os.environ["_"] = self._sys.executable
-
-        self._debug("new sys.path:")
-        for path in self._sys.path:
-            self._debug("    " + path)
-
-        self._refresh_pip()
-
     def find_module(self, fullname, path=None):
         if "." in fullname:
             return None
@@ -185,15 +188,11 @@ class PipLess(object):
 
         if self._package_exists_in_pypi(fullname):
             self._debug("module {} exists in pypi, installing".format(fullname))
-            #self._sys.sdout = self._dev_null
-            #self._sys.stderr = self._dev_null
 
             try:
                 self._pip.main(["install", fullname])
             except SystemExit as e:
                 pass
-                #self._sys.stdout = self._sys.__stdout__
-                #self._sys.stderr = self._sys.__stderr__
 
         # we've made it accessible to the normal import procedures
         # now, (should be on sys.path), so we'll return None which
