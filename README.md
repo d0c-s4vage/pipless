@@ -15,7 +15,7 @@
 
 # `pipless`
 
-`pipless` (pip LESS, as in "use it less") automagically creates and activates
+`pipless` (pip LESS, as in "use it less frequently") automagically creates and activates
 virtual environments, installs packages dynamically, and keeps your project's
 `requirements.txt` up-to-date by (re)generating it when the process exits.
 
