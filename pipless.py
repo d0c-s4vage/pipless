@@ -3,7 +3,7 @@
 
 
 """
-TL;DR pipless let's you install packages as they are needed without
+TL;DR pipless creates/activates a virtualenv in which . When the
 requiring code modification.
 
 pipless hooks the import process and automatically installs packages
@@ -34,7 +34,6 @@ is made for python in your ~/.bashrc. E.g. alias python="python
 See https://github.com/d0c-s4vage/pipless for more details.
 """
 
-
 # these will be used before we wipe out __main__
 import argparse
 import atexit
@@ -45,7 +44,9 @@ import pip
 from pip.commands.search import SearchCommand
 import os
 import sys
-import virtualenv
+
+
+VENV_ACTIVATED = False
 
 
 class DevNull(object):
@@ -66,7 +67,7 @@ class PipLess(object):
     a virtual environment.
     """
 
-    def __init__(self, venv_path=None, quiet=True, no_venv=False, debug=False):
+    def __init__(self, venv_path=None, quiet=True, no_venv=False, debug=False, requirements=False):
         """Initialize the package auto-installer and setup the
         virtual environment (if it doesn't already exist).
         
@@ -75,15 +76,18 @@ class PipLess(object):
         """
         self.debug           = debug
         self.venv_home       = venv_path
-        self.venv_parent_dir = os.path.dirname(self.venv_home)
+        if self.venv_home is not None:
+            self.venv_parent_dir = os.path.dirname(self.venv_home)
+        else:
+            self.venv_parent_dir = ""
         self.no_venv         = no_venv
         self.quiet           = quiet
+        self.no_requirements = (not requirements)
 
 
         # keep a reference to these modules. We don't want to pollute
         # the global namespace by using normal imports. Plus this avoids
         # recursive import problems
-        self._virtualenv     = virtualenv
         self._imp            = imp
         self._os             = os
         self._dev_null       = DevNull()
@@ -101,6 +105,7 @@ class PipLess(object):
 
 
         if not no_venv and not os.path.exists(self.venv_home):
+            import virtualenv
             self._debug("creating virtual environment at {}".format(self.venv_home))
             virtualenv.create_environment(
                 self.venv_home,
@@ -109,7 +114,6 @@ class PipLess(object):
             )
         else:
             self._debug("not creating virtual environment")
-            import pdb; pdb.set_trace()
 
     def _info(self, msg):
         if self.quiet:
@@ -129,13 +133,34 @@ class PipLess(object):
             self._debug("no_venv was set, not activating")
             return
 
-        self._debug("activating virtual environment at {}".format(self.venv_home))
-        activate_script = self._os.path.join(self.venv_home, "bin", "activate_this.py")
-        execfile(activate_script, dict(__file__=activate_script))
+        new_environ = dict(os.environ)
+        new_environ["PATH"] = os.path.join(self.venv_home, "bin") + ":" + new_environ["PATH"]
+        new_environ["VIRTUAL_ENV"] = os.path.abspath(self.venv_home)
+        new_environ["_"] = os.path.join(self.venv_home, "bin", "python")
 
-        self._os.environ["VIRTUAL_ENV"] = self._os.path.abspath(self._os.path.join(self.venv_home))
-        self._sys.executable = self._os.path.join(self.venv_home, "bin", "python")
-        self._os.environ["_"] = self._sys.executable
+        self._debug("replacing current process with new python in new env from venv")
+        self._debug("venv found at {!r}".format(self.venv_home))
+        venv_python_path = os.path.join(self.venv_home, "bin", "python")
+
+        new_args = [venv_python_path, "-m", "pipless", "--no-venv"]
+        if self.debug:
+            new_args.append("--debug")
+        if self.quiet:
+            new_args.append("--quiet")
+        if self.no_requirements:
+            new_args.append("--no-requirements")
+
+        os.execve(
+            venv_python_path,
+            new_args + sys.argv,
+            new_environ
+        )
+
+        #self._debug("this should never happen")
+
+        #self._os.environ["VIRTUAL_ENV"] = self._os.path.abspath(self._os.path.join(self.venv_home))
+        #self._sys.executable = self._os.path.join(self.venv_home, "bin", "python")
+        #self._os.environ["_"] = self._sys.executable
 
         self._debug("new sys.path:")
         for path in self._sys.path:
@@ -199,13 +224,18 @@ def _refresh_pip():
     _initialize_master_working_set()
 
 
-def run_script(venv_dir, script_file, installer, gen_requirements=True):
+def run_script(script_file, installer, gen_requirements=True):
     """Run the script at the provided path
     """
-    builtins = __builtins__
 
+    installer.activate()
+
+    # installer.activate may restart the process, need to setup this
+    # listener after installer.activate
     if gen_requirements:
         gen_requirements_on_exit(installer.venv_parent_dir)
+
+    builtins = __builtins__
 
     import __main__
     __main__.__dict__.clear()
@@ -217,8 +247,6 @@ def run_script(venv_dir, script_file, installer, gen_requirements=True):
     globals = __main__.__dict__
     locals = globals
 
-    installer.activate()
-
     # repr will put the script_file into quotes and escape any
     # unruly characters
     exec 'execfile({})'.format(repr(script_file)) in globals, locals
@@ -228,10 +256,12 @@ def run_interactive_shell(installer, gen_requirements=True):
     builtins = __builtins__
     code_ = code
 
+    installer.activate()
+
+    # installer.activate may restart the process, need to setup this
+    # listener after installer.activate
     if gen_requirements:
         gen_requirements_on_exit(installer.venv_parent_dir)
-
-    _refresh_pip_ = _refresh_pip
 
     import __main__
     __main__.__dict__.clear()
@@ -243,11 +273,6 @@ def run_interactive_shell(installer, gen_requirements=True):
 
         __builtins__ = builtins
     ))
-
-    installer.activate()
-
-    # should work better now with the virtualenv
-    _refresh_pip_()
 
     code_.interact()
 
@@ -271,46 +296,38 @@ def _find_venv(start_dir):
     return venv_path
 
 
-def init(venv_dir=None, gen_requirements=False, no_venv=False, debug=False):
+def init(gen_requirements=True, debug=False, quiet=False):
     """Init pipless to work in the currently-running python script.
 
-    Note that this function is intended to be used when the pipless module
+    Note that it is assumed that the currently-running script is already
+    in a virtual environment that can be written to.
+
+    This function is intended to be used when the pipless module
     is manually imported into a script.
 
     E.g.
 
         import pipless
         pipless.init(... opts ...)
-
-    Also note that the requirements.txt is generated at program exit using the
-    `atexit` module.
     
-    :param venv_dir: the virtual environment path to be used/created. Defaults to the current directory if None
     :param gen_requirements: generate a new requirements.txt before exiting
-    :param no_venv: don't create/use a virtual environment (maybe we're already in one?)
     :param debug: print everything that's happening
+    :param quiet: print nothing
     """
     currframe = inspect.currentframe()
     calling_frame_info = inspect.getouterframes(currframe, 2)[1]
     calling_frame,calling_file,_,_,_,_ = calling_frame_info
 
-    if not no_venv and venv_dir is None:
-        # TODO this may not always be correct - should maybe base it on the directory
-        # containing the calling function?
-        base_dir = os.path.dirname(calling_file)
-        venv_dir = _find_venv(base_dir)
-        if venv_dir is None:
-            venv_dir = os.path.join(base_dir, "venv")
-
     installer = PipLess(
-        venv_path = venv_dir,
-        debug     = debug
+        no_venv      = True,
+        debug        = debug,
+        requirements = gen_requirements,
+        quiet        = quiet
     )
     sys.meta_path.append(installer)
-    installer.activate()
 
     if gen_requirements:
-        gen_requirements_on_exit(installer.venv_parent_dir)
+        gen_requirements_on_exit(os.getcwd())
 
 
 def gen_requirements_on_exit(dest_dir):
@@ -339,21 +356,22 @@ def main(script_file, venv_path=None, gen_requirements=True, no_venv=False, debu
         # Replace pipless's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(script_file)
 
-    # find the virtualenv folder if one wasn't supplied
-    if script_file is None:
-        venv_path = os.path.join(os.getcwd(), "venv")
-    elif not no_venv and venv_path is None:
-        venv_path = _find_venv(sys.path[0])
         if venv_path is None:
             # if we're running a script file through pipless, search from the script's
             # directory, not the cwd
-            venv_path = os.path.join(os.path.dirname(script_file), "venv")
+            venv_path = _find_venv(sys.path[0])
+            if venv_path is None:
+                venv_path = os.path.join(os.path.dirname(script_file), "venv")
+
+    elif venv_path is None:
+        venv_path = os.path.join(os.getcwd(), "venv")
 
     installer = PipLess(
-        venv_path = venv_path,
-        no_venv   = no_venv,
-        debug     = debug,
-        quiet     = quiet,
+        venv_path    = venv_path,
+        no_venv      = no_venv,
+        debug        = debug,
+        quiet        = quiet,
+        requirements = gen_requirements
     )
     # setup the automatic imports using the venv_path
     sys.meta_path.append(installer)
@@ -375,9 +393,9 @@ def main(script_file, venv_path=None, gen_requirements=True, no_venv=False, debu
         )
 
 
-# someone directly ran the pipless.py file, or (more likely) ran python
-# with "python -m pipless script_file [args...]". The latter is the intended
-# usage.
+# someone directly ran the pipless.py file, ran python with
+# "python -m pipless script_file [args...]", or ran the pipless
+# executable script. The latter is the intended usage.
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         __file__,
@@ -393,10 +411,10 @@ if __name__ == "__main__":
         help="the path to the virtualenv to be used/created",
         default=None
     )
-    parser.add_argument("-r", "--requirements",
-        help="generate a fresh requirements.txt before exiting",
-        action="store_true",
-        default=False
+    parser.add_argument("-r", "--no-requirements",
+        help="do not a fresh requirements.txt before exiting",
+        action="store_false",
+        default=True
     )
     parser.add_argument("--debug",
         help="show debug information while running",
@@ -405,11 +423,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--quiet",
         help="show no output while running",
-        action="store_true",
-        default=False
-    )
-    parser.add_argument("--clear",
-        help="[venv] clear out the non-root install and start from scratch",
         action="store_true",
         default=False
     )
@@ -432,7 +445,7 @@ if __name__ == "__main__":
     main(
         script_file      = script_file,
         venv_path        = opts.venv,
-        gen_requirements = opts.requirements,
+        gen_requirements = opts.no_requirements,
         no_venv          = opts.no_venv,
         debug            = opts.debug,
         quiet            = opts.quiet,
