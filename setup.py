@@ -44,7 +44,7 @@ setup(
     description      = 'Too much pip? Install packages on import without changing your code.',
     long_description = __doc__,
     license          = 'MIT',
-    version          = '1.0',
+    version          = '0.1',
     author           = 'James "d0c_s4vage" Johnson',
     maintainer       = 'James "d0c_s4vage" Johnson',
     author_email     = 'd0c.s4vage@gmail.com',
