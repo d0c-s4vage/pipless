@@ -53,19 +53,33 @@ pipless.init(... opts ...)
 import tabulate
 ```
 
-## Trying it out
+## Installation
 
-`pipless` is currently under development, with most of the working code
-living in the develop branch; it is not ready to be released/made available
-through PyPI. If you'd like to give it a try locally without fully installing
-it, the commands below should help get you setup:
+### Normal Install
 
-```
-cd /tmp
-git clone https://github.com/d0c-s4vage/pipless.git
-cd pipless
-git checkout develop
-PATH="/tmp/pipless/scripts:$PATH"
-PYTHONPATH="/tmp/pipless:$PYTHONPATH"
-pipless --help
-```
+`pipless` is not currently on PyPI. However, it can be directly installed from github
+with the command below:
+
+   pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+
+### Virtual Environment Install
+
+`pipless` itself can even be installed inside of a virtual environment:
+
+   virtualenv pipless_venv
+   source pipless_venv/bin/activate
+   pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+
+
+### Source Code "Install"
+
+If you'd prefer to try `pipless` out without actually installing it, you can do
+something similar to the commands below:
+
+    cd /tmp
+    git clone https://github.com/d0c-s4vage/pipless.git
+    cd pipless
+    git checkout develop
+    PATH="/tmp/pipless/scripts:$PATH"
+    PYTHONPATH="/tmp/pipless:$PYTHONPATH"
+    pipless --help
