@@ -313,7 +313,8 @@ def init(gen_requirements=True, debug=False, quiet=False):
     """Init pipless to work in the currently-running python script.
 
     Note that it is assumed that the currently-running script is already
-    in a virtual environment that can be written to.
+    either in a virtual environment, or is able to install things
+    normally via "pip install"
 
     This function is intended to be used when the pipless module
     is manually imported into a script.
@@ -323,9 +324,9 @@ def init(gen_requirements=True, debug=False, quiet=False):
         import pipless
         pipless.init(... opts ...)
     
-    :param gen_requirements: generate a new requirements.txt before exiting
-    :param debug: print everything that's happening
-    :param quiet: print nothing
+    :param bool gen_requirements: generate a new requirements.txt before exiting 
+    :param bool debug: print all debug statements
+    :param bool quiet: print nothing
     """
     currframe = inspect.currentframe()
     calling_frame_info = inspect.getouterframes(currframe, 2)[1]
