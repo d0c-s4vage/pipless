@@ -54,12 +54,14 @@ logo = """
 # these will be used before we wipe out __main__
 import argparse
 import atexit
+import fnmatch
 import code
 import imp
 import inspect
 import pip
 from pip.commands.search import SearchCommand
 import os
+import shutil
 import sys
 
 
@@ -118,14 +120,8 @@ class PipLess(object):
         self._debug("    quiet           : {}".format(self.quiet))
 
 
-        if not no_venv and not os.path.exists(self.venv_home):
-            import virtualenv
-            self._debug("creating virtual environment at {}".format(self.venv_home))
-            virtualenv.create_environment(
-                self.venv_home,
-                site_packages = False,
-                clear         = True
-            )
+        if not no_venv:
+            self._create_virtual_env()
         else:
             self._debug("not creating virtual environment")
 
@@ -211,6 +207,60 @@ class PipLess(object):
             new_args + sys.argv,
             new_environ
         )
+
+    def _create_virtual_env(self):
+        """Create the new virtual environment if it does not yet exist.
+        
+        Also ensure that pipless.py and the pipless script get copied into
+        the new virtual environment (the new virtual environment should use
+        the same version of pipless as the previou environment).
+        """
+        import virtualenv
+        self._debug("creating virtual environment at {}".format(self.venv_home))
+        virtualenv.create_environment(
+            self.venv_home,
+            site_packages = False,
+            clear         = True
+        )
+
+        site_packages_dirs = []
+        for root, dirnames, filesnames in os.walk(self.venv_home):
+            for dirname in dirnames:
+                if dirname == "site-packages":
+                    site_packages_dirs.append(os.path.join(root, dirname))
+
+        self._debug("copying 'bin/pipless' into virtual env")
+        shutil.copy(self._which("pipless"), os.path.join(self.venv_home, "bin", "pipless"))
+
+        for site_packages_dir in site_packages_dirs:
+            new_pipless = os.path.join(site_packages_dir, "pipless.py")
+            self._debug("copying pipless.py module into virtual env at '{}'".format(new_pipless))
+            shutil.copy(__file__, new_pipless)
+
+    def _which(self, program):
+        """Simple function to determine the path of an executable.
+
+        Borrowed from https://github.com/amoffat/sh/blob/master/sh.py#L300.
+        Thanks Andrew Moffat! sh is pretty awesome :^)
+        """
+        def is_exe(fpath):
+            return (os.path.exists(fpath) and
+                    os.access(fpath, os.X_OK) and
+                    os.path.isfile(os.path.realpath(fpath)))
+
+        fpath, fname = os.path.split(program)
+        if fpath:
+            if is_exe(program):
+                return program
+        else:
+            if "PATH" not in os.environ:
+                return None
+            for path in os.environ["PATH"].split(os.pathsep):
+                exe_file = os.path.join(path, program)
+                if is_exe(exe_file):
+                    return exe_file
+
+        return None
 
     def find_module(self, fullname, path=None):
         """This is called as the finder part of the sys.meta_path hook that
