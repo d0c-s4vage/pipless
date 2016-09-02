@@ -44,7 +44,7 @@ setup(
     description      = 'Too much pip? Install packages on import without changing your code.',
     long_description = __doc__,
     license          = 'MIT',
-    version          = '0.1',
+    version          = '0.1.1',
     author           = 'James "d0c_s4vage" Johnson',
     maintainer       = 'James "d0c_s4vage" Johnson',
     author_email     = 'd0c.s4vage@gmail.com',
@@ -55,7 +55,9 @@ setup(
     py_modules       = ['pipless'],
     classifiers      = [
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
+
+        # not yet tested on python 3!
+        #'Programming Language :: Python :: 3',
     ],
     scripts          = [
         os.path.join("scripts", "pipless")
