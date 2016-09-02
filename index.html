@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pipless &mdash; pipless 0.1 documentation</title>
+  <title>pipless &mdash; pipless 0.1.1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="pipless 0.1 documentation" href="#"/>
+    <link rel="top" title="pipless 0.1.1 documentation" href="#"/>
         <link rel="next" title="pipless module" href="pipless.html"/> 
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.1
+                0.1.1
               </div>
             
           
@@ -180,6 +180,39 @@ using the python executable.</p>
 <span class="kn">import</span> <span class="nn">tabulate</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="normal-install">
+<h3>Normal Install<a class="headerlink" href="#normal-install" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">pipless</span></code> is not currently on PyPI. However, it can be directly installed from github
+with the command below:</p>
+<div class="highlight-bash"><div class="highlight"><pre>pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+</pre></div>
+</div>
+</div>
+<div class="section" id="virtual-environment-install">
+<h3>Virtual Environment Install<a class="headerlink" href="#virtual-environment-install" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">pipless</span></code> itself can even be installed inside of a virtual environment:</p>
+<div class="highlight-bash"><div class="highlight"><pre>virtualenv pipless_venv
+<span class="nb">source </span>pipless_venv/bin/activate
+pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+</pre></div>
+</div>
+</div>
+<div class="section" id="source-code-install">
+<h3>Source Code &#8220;Install&#8221;<a class="headerlink" href="#source-code-install" title="Permalink to this headline">¶</a></h3>
+<p>If you&#8217;d prefer to try <code class="docutils literal"><span class="pre">pipless</span></code> out without actually installing it, you can do
+something similar to the commands below:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nb">cd</span> /tmp
+git clone https://github.com/d0c-s4vage/pipless.git
+<span class="nb">cd </span>pipless
+git checkout develop
+<span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;/tmp/pipless/scripts:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+<span class="nv">PYTHONPATH</span><span class="o">=</span><span class="s2">&quot;/tmp/pipless:</span><span class="nv">$PYTHONPATH</span><span class="s2">&quot;</span>
+pipless --help
+</pre></div>
+</div>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="pipless.html">pipless module</a><ul class="simple">
@@ -187,6 +220,7 @@ using the python executable.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pipless.html#indices-and-tables">Indices and tables</a></li>
 </ul>
+</div>
 </div>
 </div>
 </div>
@@ -238,7 +272,7 @@ using the python executable.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.1',
+            VERSION:'0.1.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

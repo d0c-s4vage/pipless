@@ -64,6 +64,47 @@ It can be used in three ways:
 
     import tabulate
 
+Installation
+------------
+
+Normal Install
+^^^^^^^^^^^^^^
+
+``pipless`` is not currently on PyPI. However, it can be directly installed from github
+with the command below:
+
+.. code-block:: bash
+
+   pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+
+Virtual Environment Install
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``pipless`` itself can even be installed inside of a virtual environment:
+
+.. code-block:: bash
+
+   virtualenv pipless_venv
+   source pipless_venv/bin/activate
+   pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+
+
+Source Code "Install"
+^^^^^^^^^^^^^^^^^^^^^
+
+If you'd prefer to try ``pipless`` out without actually installing it, you can do
+something similar to the commands below:
+
+.. code-block:: bash
+
+    cd /tmp
+    git clone https://github.com/d0c-s4vage/pipless.git
+    cd pipless
+    git checkout develop
+    PATH="/tmp/pipless/scripts:$PATH"
+    PYTHONPATH="/tmp/pipless:$PYTHONPATH"
+    pipless --help
+
 
 .. toctree::
    :maxdepth: 2
