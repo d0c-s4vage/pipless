@@ -6,6 +6,8 @@
 pipless
 ===========
 
+`pipless on github <https://github.com/d0c-s4vage/pipless>`_
+
 .. code-block:: text
 
                    ░░┐            ▄▄▄       ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄ 
