@@ -64,40 +64,32 @@ import sys
 VENV_ACTIVATED = False
 
 
-class DevNull(object):
-    """Mock file-like object that does nothing
-    """
-    def seek(self, *args):
-        pass
-    def write(self, *args):
-        pass
-    def read(self, *args):
-        return ""
-    def close(self, *args):
-        pass
-
-
 class PipLess(object):
     """A class to automatically install missing python packages into
     a virtual environment.
     """
 
-    def __init__(self, venv_path=None, quiet=True, no_venv=False, debug=False, requirements=False):
+    def __init__(self, venv_path=None, quiet=True, no_venv=False, debug=False, requirements=True):
         """Initialize the package auto-installer and setup the
         virtual environment (if it doesn't already exist).
         
         If venv_path is None, a virtual environment named
         "venv" will be created in the current working directory
         """
-        self.debug           = debug
-        self.venv_home       = venv_path
+        self.debug               = debug
+
+        self.venv_home           = venv_path
         if self.venv_home is not None:
+            self.venv_home       = os.path.abspath(venv_path)
             self.venv_parent_dir = os.path.dirname(self.venv_home)
         else:
             self.venv_parent_dir = ""
-        self.no_venv         = no_venv
-        self.quiet           = quiet
-        self.no_requirements = (not requirements)
+        self.no_venv             = no_venv
+        self.quiet               = quiet
+        self.no_requirements     = (not requirements)
+
+        if requirements:
+            atexit.register(self._on_exit)
 
 
         # keep a reference to these modules. We don't want to pollute
@@ -105,11 +97,9 @@ class PipLess(object):
         # recursive import problems
         self._imp            = imp
         self._os             = os
-        self._dev_null       = DevNull()
         self._pip            = pip
         self._sys            = sys
         self._search_command = SearchCommand
-        self._refresh_pip    = _refresh_pip
 
         self._debug("created new PipLess")
         self._debug("    debug           : {}".format(self.debug))
@@ -130,6 +120,33 @@ class PipLess(object):
         else:
             self._debug("not creating virtual environment")
 
+    def _on_exit(self):
+        import pip
+        import os
+        import sys
+
+        self._refresh_pip()
+
+        req_path = os.path.join(self.venv_parent_dir, "requirements.txt")
+        self._debug("saving requirements.txt to {!r}".format(req_path))
+
+        with open(req_path, "wb") as f:
+            sys.stdout = f
+            pip.main(["freeze"])
+            sys.stdout = sys.__stdout__
+
+    def _refresh_pip(self):
+        self._debug("refreshing pip's module list")
+
+        # Pip keeps track of the currently loaded modules in the current script
+        # (and the current working set, etc) by creating a list of modules that
+        # are accessible from sys.path (basically).
+        # 
+        # this list is generated when pip is first imported. This function
+        # forces that list to be regenerated.
+        from pip._vendor.pkg_resources import _initialize_master_working_set
+        _initialize_master_working_set()
+
     def _info(self, msg):
         if self.quiet:
             return
@@ -137,6 +154,9 @@ class PipLess(object):
         self._sys.stdout.flush()
 
     def _debug(self, msg):
+        if self.quiet:
+            return
+
         if self.debug:
             print("\n".join("[PIPLESS]:DBG: {}".format(x) for x in msg.split("\n")))
             self._sys.stdout.flush()
@@ -157,7 +177,15 @@ class PipLess(object):
         self._debug("venv found at {!r}".format(self.venv_home))
         venv_python_path = os.path.join(self.venv_home, "bin", "python")
 
-        new_args = [venv_python_path, "-m", "pipless", "--no-venv"]
+        new_args = [
+            venv_python_path,
+            "-m", "pipless",
+            "--no-venv",
+
+            # even though we say to not use the venv, this is still
+            # used to determine where to save the requirements.txt file
+            "--venv", self.venv_home
+        ]
         if self.debug:
             new_args.append("--debug")
         if self.quiet:
@@ -189,10 +217,17 @@ class PipLess(object):
         if self._package_exists_in_pypi(fullname):
             self._debug("module {} exists in pypi, installing".format(fullname))
 
+            if self.quiet:
+                import logging
+                pip_log = logging.getLogger("pip")
+                _level = pip_log.level
+                pip_log.setLevel(logging.CRITICAL)
+
             try:
                 self._pip.main(["install", fullname])
-            except SystemExit as e:
-                pass
+            finally:
+                if self.quiet:
+                    pip_log.setLevel(_level)
 
         # we've made it accessible to the normal import procedures
         # now, (should be on sys.path), so we'll return None which
@@ -212,27 +247,11 @@ class PipLess(object):
         return False
 
 
-def _refresh_pip():
-    # Pip keeps track of the currently loaded modules in the current script
-    # (and the current working set, etc) by creating a list of modules that
-    # are accessible from sys.path (basically).
-    # 
-    # this list is generated when pip is first imported. This function
-    # forces that list to be regenerated.
-    from pip._vendor.pkg_resources import _initialize_master_working_set
-    _initialize_master_working_set()
-
-
 def run_script(script_file, installer, gen_requirements=True):
     """Run the script at the provided path
     """
 
     installer.activate()
-
-    # installer.activate may restart the process, need to setup this
-    # listener after installer.activate
-    if gen_requirements:
-        gen_requirements_on_exit(installer.venv_parent_dir)
 
     builtins = __builtins__
 
@@ -256,11 +275,6 @@ def run_interactive_shell(installer, gen_requirements=True):
     code_ = code
 
     installer.activate()
-
-    # installer.activate may restart the process, need to setup this
-    # listener after installer.activate
-    if gen_requirements:
-        gen_requirements_on_exit(installer.venv_parent_dir)
 
     import __main__
     __main__.__dict__.clear()
@@ -299,7 +313,8 @@ def init(gen_requirements=True, debug=False, quiet=False):
     """Init pipless to work in the currently-running python script.
 
     Note that it is assumed that the currently-running script is already
-    in a virtual environment that can be written to.
+    either in a virtual environment, or is able to install things
+    normally via "pip install"
 
     This function is intended to be used when the pipless module
     is manually imported into a script.
@@ -309,9 +324,9 @@ def init(gen_requirements=True, debug=False, quiet=False):
         import pipless
         pipless.init(... opts ...)
     
-    :param gen_requirements: generate a new requirements.txt before exiting
-    :param debug: print everything that's happening
-    :param quiet: print nothing
+    :param bool gen_requirements: generate a new requirements.txt before exiting 
+    :param bool debug: print all debug statements
+    :param bool quiet: print nothing
     """
     currframe = inspect.currentframe()
     calling_frame_info = inspect.getouterframes(currframe, 2)[1]
@@ -324,27 +339,6 @@ def init(gen_requirements=True, debug=False, quiet=False):
         quiet        = quiet
     )
     sys.meta_path.append(installer)
-
-    if gen_requirements:
-        gen_requirements_on_exit(os.getcwd())
-
-
-def gen_requirements_on_exit(dest_dir):
-    refresh_pip = _refresh_pip
-
-    def on_exit():
-        import pip
-        import os
-        import sys
-
-        refresh_pip()
-
-        with open(os.path.join(dest_dir, "requirements.txt"), "wb") as f:
-            sys.stdout = f
-            pip.main(["freeze"])
-            sys.stdout = sys.__stdout__
-
-    atexit.register(on_exit)
 
 
 def main(script_file, venv_path=None, gen_requirements=True, no_venv=False, debug=False, quiet=False):
@@ -422,6 +416,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--quiet",
         help="show no output while running",
+        action="store_true",
+        default=False
+    )
+    parser.add_argument("-p", "--python",
+        help="path to the python executable to use in the virtual environment",
         action="store_true",
         default=False
     )

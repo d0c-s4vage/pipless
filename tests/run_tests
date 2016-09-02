@@ -1,0 +1,9 @@
+#!/bin/bash
+
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+if [[ $# -ne 1 ]] ; then
+	python -m unittest $(find . -name "test_*.py" | sed 's/.py//' | sed 's/^\.\///')
+else
+	python -m unittest $@
+fi
