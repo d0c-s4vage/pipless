@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pipless module &mdash; pipless 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pipless 0.1 documentation" href="index.html"/>
+        <link rel="prev" title="pipless" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pipless
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">pipless module</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">pipless</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>pipless module</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/pipless.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pipless-module">
+<h1>pipless module<a class="headerlink" href="#pipless-module" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<span class="target" id="module-pipless"></span><p>pipless creates/activates a virtualenv in which the python process
+will operate. pipless hooks the import process and automatically
+installs missing packages into the current environment.  On process
+exit, pipless will generate a new requirements.txt in the same
+directory that the virtual env folder exists in.</p>
+<p>pipless can be used in three ways:</p>
+<ol class="arabic">
+<li><p class="first">To directly run scripts:</p>
+<blockquote>
+<div><p>pipless test.py &#8211;arg1 &#8211;arg2 val</p>
+</div></blockquote>
+</li>
+<li><p class="first">Interactively. Running pipless without a script will drop you
+into an interactive shell:</p>
+<blockquote>
+<div><p>/tmp $ pipless
+Python 2.7.10 (default, Oct 14 2015, 16:09:02) 
+[GCC 5.2.1 20151010] on linux2
+Type &#8220;help&#8221;, &#8220;copyright&#8221;, &#8220;credits&#8221; or &#8220;license&#8221; for more information.
+(InteractiveConsole)
+&gt;&gt;&gt;</p>
+</div></blockquote>
+</li>
+<li><p class="first">Importing and manually initializing pipless:</p>
+<blockquote>
+<div><p>import pipless
+pipless.init(..opts..)</p>
+</div></blockquote>
+</li>
+</ol>
+<p>See <a class="reference external" href="https://github.com/d0c-s4vage/pipless">https://github.com/d0c-s4vage/pipless</a> for more details.</p>
+<dl class="class">
+<dt id="pipless.PipLess">
+<em class="property">class </em><code class="descclassname">pipless.</code><code class="descname">PipLess</code><span class="sig-paren">(</span><em>venv_path=None</em>, <em>quiet=True</em>, <em>no_venv=False</em>, <em>debug=False</em>, <em>requirements=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#PipLess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.PipLess" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class to automatically install missing python packages into
+a virtual environment.</p>
+<dl class="method">
+<dt id="pipless.PipLess.activate">
+<code class="descname">activate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#PipLess.activate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.PipLess.activate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate the virtual environment.</p>
+<p>This actually restarts the pipless script using <cite>os.execve()</cite> to
+replace itself with a subprocess that uses the correct python binary
+from the venv/bin directory with the correct environment variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipless.PipLess.find_module">
+<code class="descname">find_module</code><span class="sig-paren">(</span><em>fullname</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#PipLess.find_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.PipLess.find_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called as the finder part of the sys.meta_path hook that
+was installed.  See PEP 302 (<a class="reference external" href="https://www.python.org/dev/peps/pep-0302/">https://www.python.org/dev/peps/pep-0302/</a>)
+for more details.</p>
+<p>Instead of acting as both the finder and the loader object as defined
+in PEP 302, we only act as the finder object. If a package is not yet
+installed, but can be installed through PyPI, we install the package,
+and then return None, meaning that we did not find the package and
+could not return a loader object with which the package should be loaded.</p>
+<p>Returning None from this method will cause the normal Python import
+process to resume, which will pick up our newly installed python
+package.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fullname</strong> (<em>str</em>) &#8211; The fullname of the module being imported</li>
+<li><strong>path</strong> (<em>str</em>) &#8211; Not used by pipless - see PEP 302</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pipless.init">
+<code class="descclassname">pipless.</code><code class="descname">init</code><span class="sig-paren">(</span><em>gen_requirements=True</em>, <em>debug=False</em>, <em>quiet=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Init pipless to work in the currently-running python script.</p>
+<p>Note that it is assumed that the currently-running script is already
+either in a virtual environment, or is able to install things
+normally via &#8220;pip install&#8221;</p>
+<p>This function is intended to be used when the pipless module
+is manually imported into a script.</p>
+<p>E.g.</p>
+<blockquote>
+<div>import pipless
+pipless.init(... opts ...)</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>gen_requirements</strong> (<em>bool</em>) &#8211; generate a new requirements.txt before exiting</li>
+<li><strong>debug</strong> (<em>bool</em>) &#8211; print all debug statements</li>
+<li><strong>quiet</strong> (<em>bool</em>) &#8211; print nothing</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pipless.main">
+<code class="descclassname">pipless.</code><code class="descname">main</code><span class="sig-paren">(</span><em>script_file=None</em>, <em>venv_path=None</em>, <em>gen_requirements=True</em>, <em>no_venv=False</em>, <em>debug=False</em>, <em>quiet=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find or create a virtual environment, setup the automatic
+importer, and run an interactive shell or a script at the provided path.</p>
+<p>Note that if no <code class="docutils literal"><span class="pre">venv_path</span></code> is specified, all parent directories will be
+searched for a <code class="docutils literal"><span class="pre">venv</span></code> folder.</p>
+<p>E.g., if pipless is run in the directory <code class="docutils literal"><span class="pre">/tmp/test/a/b/c</span></code>, and <code class="docutils literal"><span class="pre">venv_path</span></code> is
+not specified, then the following directories will be checked for existence and used
+as the <code class="docutils literal"><span class="pre">venv_path</span></code> if found:</p>
+<div class="highlight-text"><div class="highlight"><pre>/tmp/test/a/b/c/venv
+/tmp/test/a/b/venv
+/tmp/test/a/venv
+/tmp/test/venv
+/tmp/venv/
+/venv
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">requirements.txt</span></code> file will always be written into the directory
+containing the virtual environment folder.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>script_file</strong> (<em>str</em>) &#8211; The python script to run. (can be None)</li>
+<li><strong>venv_path</strong> (<em>str</em>) &#8211; The path at which to create/activate the virtual environment</li>
+<li><strong>gen_requirements</strong> (<em>bool</em>) &#8211; If a requirements.txt should be generated at process exit.</li>
+<li><strong>no_venv</strong> (<em>bool</em>) &#8211; If a virtual environment should not be created/activated.</li>
+<li><strong>debug</strong> (<em>bool</em>) &#8211; Display verbose debug statements</li>
+<li><strong>quiet</strong> (<em>bool</em>) &#8211; Do not display any text while executing</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="pipless" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, James &#34;doc_s4vage&#34; Johnson.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
