@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# encoding: utf-8
+# Created by James "d0c_s4vage" Johnson
+# https://github.com/d0c-s4vage/pipless
+# MIT License
+
+"""
+A simple wrapper that runs the main pipless module
+"""
+
+
+import imp
+import __main__
+
+_,pipless_path,_ = imp.find_module("pipless")
+
+globals_ = globals()
+globals_.update(dict(
+    __name__ = "__main__",
+    __file__ = pipless_path
+))
+
+execfile(pipless_path, globals_)
