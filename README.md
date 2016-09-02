@@ -60,15 +60,15 @@ import tabulate
 `pipless` is not currently on PyPI. However, it can be directly installed from github
 with the command below:
 
-   pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+	pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
 
 ### Virtual Environment Install
 
 `pipless` itself can even be installed inside of a virtual environment:
 
-   virtualenv pipless_venv
-   source pipless_venv/bin/activate
-   pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
+	virtualenv pipless_venv
+	source pipless_venv/bin/activate
+	pip install --upgrade git+git://github.com/d0c-s4vage/pipless.git
 
 
 ### Source Code "Install"
