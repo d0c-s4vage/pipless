@@ -99,6 +99,7 @@ something similar to the commands below:
 .. toctree::
    :maxdepth: 2
 
+   mappings
    pipless
 
 Indices and tables

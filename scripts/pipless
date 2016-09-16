@@ -10,7 +10,9 @@ A simple wrapper that runs the main pipless module
 
 
 import imp
+import os
 import __main__
+
 
 _,pipless_path,_ = imp.find_module("pipless")
 
@@ -20,4 +22,4 @@ globals_.update(dict(
     __file__ = pipless_path
 ))
 
-execfile(pipless_path, globals_)
+execfile(os.path.join(pipless_path, "__main__.py"), globals_)
