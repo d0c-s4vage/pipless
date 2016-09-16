@@ -1,6 +1,6 @@
 
-pipless module
-==============
+Source Documentation
+====================
 
 .. toctree::
    :maxdepth: 2
