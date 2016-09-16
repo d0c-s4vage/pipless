@@ -81,7 +81,8 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../pipless.html">pipless module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mappings.html">Mappings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pipless.html">Source Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pipless.html#indices-and-tables">Indices and tables</a></li>
 </ul>
 
@@ -191,11 +192,75 @@
 <span class="kn">import</span> <span class="nn">pip</span>
 <span class="kn">from</span> <span class="nn">pip.commands.search</span> <span class="kn">import</span> <span class="n">SearchCommand</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
 
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;0.1.2&quot;</span>
+
+
 <span class="n">VENV_ACTIVATED</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+<div class="viewcode-block" id="PipLessMapping"><a class="viewcode-back" href="../pipless.html#pipless.PipLessMapping">[docs]</a><span class="k">class</span> <span class="nc">PipLessMapping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class that loads a pipless mapping file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="PipLessMapping.load"><a class="viewcode-back" href="../pipless.html#pipless.PipLessMapping.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load a pipless mapping file into this PipLessMapping instance.</span>
+<span class="sd">        Loading a new mapping may overwrite existing (default) mapping</span>
+<span class="sd">        entries. No errors are raised if ``path`` does not exist.</span>
+
+<span class="sd">        A mapping file consists of zero or more mapping lines, optionally</span>
+<span class="sd">        with comment lines (beginning with ``#``).</span>
+<span class="sd">        </span>
+<span class="sd">        Each mapping begins with the package name (what you import with),</span>
+<span class="sd">        followed by the distribution name (what you install with). E.g.:</span>
+
+<span class="sd">        .. code-block:: text</span>
+
+<span class="sd">           # this is a comment</span>
+<span class="sd">           flask  Flask</span>
+<span class="sd">   </span>
+<span class="sd">           yaml   PyYaml # another comment</span>
+<span class="sd">           jinja2 Jinja2</span>
+
+
+<span class="sd">        :param str path: The path of the mapping file to load.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="c"># remove comment lines</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&#39;#.*&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">mapping_lines</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">mapping_lines</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            
+            <span class="c"># split on whitespace</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="p">[</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="PipLessMapping.get"><a class="viewcode-back" href="../pipless.html#pipless.PipLessMapping.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">import_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the distribution name from the mapping for</span>
+<span class="sd">        the package name, or ``None`` if it is not defined.</span>
+
+<span class="sd">        :param str import_name: The package name to look up the distribution name for</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">import_name</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="PipLess"><a class="viewcode-back" href="../pipless.html#pipless.PipLess">[docs]</a><span class="k">class</span> <span class="nc">PipLess</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -232,7 +297,6 @@
         <span class="k">if</span> <span class="n">requirements</span><span class="p">:</span>
             <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_exit</span><span class="p">)</span>
 
-
         <span class="c"># keep a reference to these modules. We don&#39;t want to pollute</span>
         <span class="c"># the global namespace by using normal imports. Plus this avoids</span>
         <span class="c"># recursive import problems</span>
@@ -241,6 +305,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_pip</span>            <span class="o">=</span> <span class="n">pip</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sys</span>            <span class="o">=</span> <span class="n">sys</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_search_command</span> <span class="o">=</span> <span class="n">SearchCommand</span>
+
+        <span class="c"># load the mapping files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span>        <span class="o">=</span> <span class="n">PipLessMapping</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&quot;mappings.txt&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;~&quot;</span><span class="p">,</span> <span class="s">&quot;.config&quot;</span><span class="p">,</span> <span class="s">&quot;pipless&quot;</span><span class="p">,</span> <span class="s">&quot;mappings.txt&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;created new PipLess&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;    debug           : {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">))</span>
@@ -345,6 +418,9 @@
 <span class="sd">        the new virtual environment (the new virtual environment should use</span>
 <span class="sd">        the same version of pipless as the previou environment).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">venv_home</span><span class="p">):</span>
+            <span class="k">return</span>
+
         <span class="kn">import</span> <span class="nn">virtualenv</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;creating virtual environment at {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">venv_home</span><span class="p">))</span>
         <span class="n">virtualenv</span><span class="o">.</span><span class="n">create_environment</span><span class="p">(</span>
@@ -362,10 +438,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;copying &#39;bin/pipless&#39; into virtual env&quot;</span><span class="p">)</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_which</span><span class="p">(</span><span class="s">&quot;pipless&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">venv_home</span><span class="p">,</span> <span class="s">&quot;bin&quot;</span><span class="p">,</span> <span class="s">&quot;pipless&quot;</span><span class="p">))</span>
 
-        <span class="k">for</span> <span class="n">site_packages_dir</span> <span class="ow">in</span> <span class="n">site_packages_dirs</span><span class="p">:</span>
-            <span class="n">new_pipless</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">site_packages_dir</span><span class="p">,</span> <span class="s">&quot;pipless.py&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;copying pipless.py module into virtual env at &#39;{}&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_pipless</span><span class="p">))</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">__file__</span><span class="p">,</span> <span class="n">new_pipless</span><span class="p">)</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s">&quot;__init__.py&quot;</span><span class="p">,</span>
+            <span class="s">&quot;__main__.py&quot;</span><span class="p">,</span>
+            <span class="s">&quot;mappings.txt&quot;</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+            <span class="n">file_to_copy</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span>
+
+            <span class="n">site_packages_dir</span> <span class="o">=</span> <span class="n">site_packages_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">new_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">site_packages_dir</span><span class="p">,</span> <span class="s">&quot;pipless&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">new_file</span><span class="p">)):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">new_file</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;copying {} into virtual env at &#39;{}&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">file_to_copy</span><span class="p">,</span>
+                <span class="n">new_file</span>
+            <span class="p">))</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">file_to_copy</span><span class="p">,</span> <span class="n">new_file</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_which</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Simple function to determine the path of an executable.</span>
@@ -424,7 +515,7 @@
             <span class="c"># it&#39;s already accessible, we don&#39;t need to do anything</span>
             <span class="k">return</span> <span class="bp">None</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_package_exists_in_pypi</span><span class="p">(</span><span class="n">fullname</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_pypi_distro_name</span><span class="p">(</span><span class="n">fullname</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_debug</span><span class="p">(</span><span class="s">&quot;module {} exists in pypi, installing&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fullname</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quiet</span><span class="p">:</span>
@@ -444,25 +535,38 @@
         <span class="c"># will make Python attempt a normal import</span>
         <span class="k">return</span> <span class="bp">None</span></div>
 
-    <span class="k">def</span> <span class="nf">_package_exists_in_pypi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check pypi using pip to see if the package exists.</span>
+    <span class="k">def</span> <span class="nf">_get_pypi_distro_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lookup a mapping for the import name ``fullname`` in the</span>
+<span class="sd">        mapping files. If a mapping of the package name to the distribution name</span>
+<span class="sd">        does not exist, check if an exact match exists in PyPI.</span>
+
+<span class="sd">        :param str fullname: the fullname of the package</span>
+<span class="sd">        :returns: returns None if the distribution name is unknown, else</span>
+<span class="sd">        the distribution (install) name</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mapped_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_package_pypi_mapping_defined</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mapped_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mapped_name</span>
+
         <span class="c"># TODO maybe use xmlrpclib directly instead of going through pip? - see</span>
         <span class="c"># https://wiki.python.org/moin/PyPIXmlRpc for a good example.</span>
-
-        <span class="c"># TODO: use a pre-compiled mapping of import names</span>
-        <span class="c"># to install names. Until then, going by exact matches</span>
-        <span class="c"># will have to do</span>
         <span class="n">searcher</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_command</span><span class="p">()</span>
         <span class="n">options</span><span class="p">,</span><span class="n">args</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="n">fullname</span><span class="p">])</span>
         <span class="n">matches</span> <span class="o">=</span> <span class="n">searcher</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
         <span class="n">found_match</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">match</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">fullname</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">True</span>
+                <span class="k">return</span> <span class="n">fullname</span>
                 <span class="k">break</span>
 
-        <span class="k">return</span> <span class="bp">False</span></div>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_package_pypi_mapping_defined</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check the global pipless-mappings file as well as the user&#39;s</span>
+<span class="sd">        ~/.config/pipless/mappings file (if it exists) to see if a mapping</span>
+<span class="sd">        of the package name to the distribution name exists</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_run_script</span><span class="p">(</span><span class="n">script_file</span><span class="p">):</span>
@@ -630,70 +734,6 @@
     <span class="c"># no arguments)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">_run_interactive_shell</span><span class="p">()</span></div>
-
-
-<span class="c"># someone directly ran the pipless.py file, ran python with</span>
-<span class="c"># &quot;python -m pipless script_file [args...]&quot;, or ran the pipless</span>
-<span class="c"># executable script. The latter is the intended usage.</span>
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
-        <span class="n">__file__</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="n">logo</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">+</span><span class="n">__doc__</span><span class="p">,</span>
-        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawTextHelpFormatter</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;-n&quot;</span><span class="p">,</span> <span class="s">&quot;--no-venv&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;don&#39;t use a virtual environment (maybe already in one?)&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="bp">False</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;-v&quot;</span><span class="p">,</span> <span class="s">&quot;--venv&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;the path to the virtualenv to be used/created&quot;</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="bp">None</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;-r&quot;</span><span class="p">,</span> <span class="s">&quot;--no-requirements&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;do not a fresh requirements.txt before exiting&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_false&quot;</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="bp">True</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--debug&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;show debug information while running&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="bp">False</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--quiet&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;show no output while running&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="bp">False</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;-p&quot;</span><span class="p">,</span> <span class="s">&quot;--python&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;path to the python executable to use in the virtual environment&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="bp">False</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;remainder&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s">&quot;script-specific arguments (not pipless arguments)&quot;</span><span class="p">,</span>
-        <span class="n">nargs</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">REMAINDER</span>
-    <span class="p">)</span>
-    <span class="n">opts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-
-    <span class="n">script_file</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">remainder</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">script_file</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">remainder</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">script_file</span><span class="p">):</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: {!r} does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">script_file</span><span class="p">))</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="c"># hide pipless.py from the argument list</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">remainder</span>
-
-    <span class="n">main</span><span class="p">(</span>
-        <span class="n">script_file</span>      <span class="o">=</span> <span class="n">script_file</span><span class="p">,</span>
-        <span class="n">venv_path</span>        <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">venv</span><span class="p">,</span>
-        <span class="n">gen_requirements</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">no_requirements</span><span class="p">,</span>
-        <span class="n">no_venv</span>          <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">no_venv</span><span class="p">,</span>
-        <span class="n">debug</span>            <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">debug</span><span class="p">,</span>
-        <span class="n">quiet</span>            <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">quiet</span><span class="p">,</span>
-    <span class="p">)</span>
 </pre></div>
 
            </div>

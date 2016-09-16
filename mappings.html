@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mappings &mdash; pipless 0.1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pipless 0.1.1 documentation" href="index.html"/>
+        <link rel="next" title="Source Documentation" href="pipless.html"/>
+        <link rel="prev" title="pipless" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pipless
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Mappings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mapping-file-format">Mapping File Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#locations">Locations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipless.html">Source Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipless.html#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">pipless</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Mappings</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/mappings.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mappings">
+<h1>Mappings<a class="headerlink" href="#mappings" title="Permalink to this headline">¶</a></h1>
+<p>Due to the differences between distribution names and package names
+on PyPI, in certain scenarios pipless will be unable to determine
+how to install a distribution from the package name.</p>
+<p><strong>NOTE</strong>: <em>A package name is what you import with (e.g.</em> <code class="docutils literal"><span class="pre">import</span> <span class="pre">flask</span></code> <em>), a
+distribution name is what you pip install with (e.g.</em> <code class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">Flask</span></code> <em>).
+Package names do not need to (and don&#8217;t always) match the
+distribution name</em></p>
+<p>Currently no complete mapping exists between the distribution and package
+names that are hosted on PyPI. As such, I have started a new project, <a class="reference external" href="https://github.com/d0c-s4vage/pypi_map">pypi_map</a>,
+to map all of the package names. Until that project is complete,
+pipless makes use of mapping files that allow the user to
+explicitly map distribution names to import names.</p>
+<div class="section" id="mapping-file-format">
+<h2>Mapping File Format<a class="headerlink" href="#mapping-file-format" title="Permalink to this headline">¶</a></h2>
+<p>The mapping file format is extremely simple. Each mapping is on
+its own line. Comments begin with a pound sign (<code class="docutils literal"><span class="pre">#</span></code>), and empty
+lines are ignored.</p>
+<p>A mapping consists of the package name (what you import with) followed
+by whitespace, and then the distribution name (the name to install it with).</p>
+<p>E.g.:</p>
+<div class="highlight-text"><div class="highlight"><pre># this is a comment
+flask  Flask
+
+yaml   PyYaml # another comment
+jinja2 Jinja2
+</pre></div>
+</div>
+</div>
+<div class="section" id="locations">
+<h2>Locations<a class="headerlink" href="#locations" title="Permalink to this headline">¶</a></h2>
+<p>Pipless loads mapping files automatically from the two locations:</p>
+<ol class="arabic simple">
+<li>Installation directory</li>
+</ol>
+<p>Pipless includes a default <code class="docutils literal"><span class="pre">mappings.txt</span></code> file with its source code.
+This can be found at:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pipless</span>
+<span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">pipless</span><span class="o">.</span><span class="n">__file__</span><span class="p">),</span> <span class="s">&quot;mapping.txt&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li>User config directory</li>
+</ol>
+<p>Pipless also checks for a <code class="docutils literal"><span class="pre">mappings.txt</span></code> at <code class="docutils literal"><span class="pre">~/.config/pipless/mappings.txt</span></code>. This file
+(and directory tree) is not automatically created.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pipless.html" class="btn btn-neutral float-right" title="Source Documentation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="pipless" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, James &#34;doc_s4vage&#34; Johnson.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

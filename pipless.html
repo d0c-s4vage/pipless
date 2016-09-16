@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pipless module &mdash; pipless 0.1.1 documentation</title>
+  <title>Source Documentation &mdash; pipless 0.1.1 documentation</title>
   
 
   
@@ -31,7 +31,7 @@
 
   
     <link rel="top" title="pipless 0.1.1 documentation" href="index.html"/>
-        <link rel="prev" title="pipless" href="index.html"/> 
+        <link rel="prev" title="Mappings" href="mappings.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -81,7 +81,8 @@
             
             
                 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">pipless module</a><ul class="simple">
+<li class="toctree-l1"><a class="reference internal" href="mappings.html">Mappings</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Source Documentation</a><ul class="simple">
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -115,7 +116,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>pipless module</li>
+    <li>Source Documentation</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -129,8 +130,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="pipless-module">
-<h1>pipless module<a class="headerlink" href="#pipless-module" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="source-documentation">
+<h1>Source Documentation<a class="headerlink" href="#source-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul class="simple">
 </ul>
@@ -203,6 +204,54 @@ package.</p>
 <li><strong>path</strong> (<em>str</em>) &#8211; Not used by pipless - see PEP 302</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pipless.PipLessMapping">
+<em class="property">class </em><code class="descclassname">pipless.</code><code class="descname">PipLessMapping</code><a class="reference internal" href="_modules/pipless.html#PipLessMapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.PipLessMapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that loads a pipless mapping file</p>
+<dl class="method">
+<dt id="pipless.PipLessMapping.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>import_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#PipLessMapping.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.PipLessMapping.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the distribution name from the mapping for
+the package name, or <code class="docutils literal"><span class="pre">None</span></code> if it is not defined.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>import_name</strong> (<em>str</em>) &#8211; The package name to look up the distribution name for</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipless.PipLessMapping.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipless.html#PipLessMapping.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pipless.PipLessMapping.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a pipless mapping file into this PipLessMapping instance.
+Loading a new mapping may overwrite existing (default) mapping
+entries. No errors are raised if <code class="docutils literal"><span class="pre">path</span></code> does not exist.</p>
+<p>A mapping file consists of zero or more mapping lines, optionally
+with comment lines (beginning with <code class="docutils literal"><span class="pre">#</span></code>).</p>
+<p>Each mapping begins with the package name (what you import with),
+followed by the distribution name (what you install with). E.g.:</p>
+<div class="highlight-text"><div class="highlight"><pre># this is a comment
+flask  Flask
+
+yaml   PyYaml # another comment
+jinja2 Jinja2
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<em>str</em>) &#8211; The path of the mapping file to load.</td>
 </tr>
 </tbody>
 </table>
@@ -294,7 +343,7 @@ containing the virtual environment folder.</p>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="index.html" class="btn btn-neutral" title="pipless" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="mappings.html" class="btn btn-neutral" title="Mappings" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
