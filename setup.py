@@ -52,7 +52,7 @@ setup(
     platforms        = 'Cross Platform',
 	download_url     = "https://github.com/d0c-s4vage/pipless/tarball/v1.0",
 	install_requires = ["virtualenv"],
-    py_modules       = ['pipless'],
+    packages         = ['pipless'],
     classifiers      = [
         'Programming Language :: Python :: 2',
 
@@ -61,5 +61,8 @@ setup(
     ],
     scripts          = [
         os.path.join("scripts", "pipless")
-    ]
+    ],
+    package_data     = {
+        "pipless" :  ["mappings.txt"]
+    }
 )

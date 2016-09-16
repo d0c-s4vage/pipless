@@ -61,11 +61,72 @@ import inspect
 import pip
 from pip.commands.search import SearchCommand
 import os
+import re
 import shutil
 import sys
 
 
 VENV_ACTIVATED = False
+
+
+class PipLessMapping(object):
+    """A class that loads a pipless mapping file
+    """
+
+    def __init__(self):
+        """
+        """
+        self.mapping = {}
+
+    def load(self, path):
+        """Load a pipless mapping file into this PipLessMapping instance.
+        Loading a new mapping may overwrite existing (default) mapping
+        entries. No errors are raised if ``path`` does not exist.
+
+        A mapping file consists of zero or more mapping lines, optionally
+        with comment lines (beginning with ``#``).
+        
+        Each mapping begins with the package name (what you import with),
+        followed by the distribution name (what you install with). E.g.:
+
+        .. code-block:: text
+
+           # this is a comment
+           flask  Flask
+   
+           yaml   PyYaml # another comment
+           jinja2 Jinja2
+
+
+        :param str path: The path of the mapping file to load.
+        """
+        if not os.path.exists(path):
+            return
+
+        with open(path, "rb") as f:
+            data = f.read()
+
+        # remove comment lines
+        data = re.sub(r'#.*', '', data)
+        mapping_lines = filter(lambda x: x.strip() != "", data.split("\n"))
+
+        for line in mapping_lines:
+            line = line.strip()
+            
+            # split on whitespace
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+
+            self.mapping[parts[0]] = parts[1]
+
+    def get(self, import_name):
+        """Return the distribution name from the mapping for
+        the package name, or ``None`` if it is not defined.
+
+        :param str import_name: The package name to look up the distribution name for
+        """
+        return self.mapping.get(import_name, None)
 
 
 class PipLess(object):
@@ -102,7 +163,6 @@ class PipLess(object):
         if requirements:
             atexit.register(self._on_exit)
 
-
         # keep a reference to these modules. We don't want to pollute
         # the global namespace by using normal imports. Plus this avoids
         # recursive import problems
@@ -111,6 +171,15 @@ class PipLess(object):
         self._pip            = pip
         self._sys            = sys
         self._search_command = SearchCommand
+
+        # load the mapping files
+        self._mapping        = PipLessMapping()
+        self._mapping.load(
+            os.path.join(os.path.dirname(__file__), "mappings.txt")
+        )
+        self._mapping.load(
+            os.path.expanduser(os.path.join("~", ".config", "pipless", "mappings.txt"))
+        )
 
         self._debug("created new PipLess")
         self._debug("    debug           : {}".format(self.debug))
@@ -215,6 +284,9 @@ class PipLess(object):
         the new virtual environment (the new virtual environment should use
         the same version of pipless as the previou environment).
         """
+        if os.path.exists(self.venv_home):
+            return
+
         import virtualenv
         self._debug("creating virtual environment at {}".format(self.venv_home))
         virtualenv.create_environment(
@@ -232,10 +304,25 @@ class PipLess(object):
         self._debug("copying 'bin/pipless' into virtual env")
         shutil.copy(self._which("pipless"), os.path.join(self.venv_home, "bin", "pipless"))
 
-        for site_packages_dir in site_packages_dirs:
-            new_pipless = os.path.join(site_packages_dir, "pipless.py")
-            self._debug("copying pipless.py module into virtual env at '{}'".format(new_pipless))
-            shutil.copy(__file__, new_pipless)
+        filenames = [
+            "__init__.py",
+            "__main__.py",
+            "mappings.txt"
+        ]
+
+        for filename in filenames:
+            file_to_copy = os.path.join(os.path.dirname(__file__), filename)
+
+            site_packages_dir = site_packages_dirs[0]
+            new_file = os.path.join(site_packages_dir, "pipless", filename)
+            if not os.path.exists(os.path.dirname(new_file)):
+                os.makedirs(os.path.dirname(new_file))
+
+            self._debug("copying {} into virtual env at '{}'".format(
+                file_to_copy,
+                new_file
+            ))
+            shutil.copy(file_to_copy, new_file)
 
     def _which(self, program):
         """Simple function to determine the path of an executable.
@@ -294,7 +381,7 @@ class PipLess(object):
             # it's already accessible, we don't need to do anything
             return None
 
-        if self._package_exists_in_pypi(fullname):
+        if self._get_pypi_distro_name(fullname):
             self._debug("module {} exists in pypi, installing".format(fullname))
 
             if self.quiet:
@@ -314,25 +401,38 @@ class PipLess(object):
         # will make Python attempt a normal import
         return None
 
-    def _package_exists_in_pypi(self, fullname):
-        """Check pypi using pip to see if the package exists.
+    def _get_pypi_distro_name(self, fullname):
+        """Lookup a mapping for the import name ``fullname`` in the
+        mapping files. If a mapping of the package name to the distribution name
+        does not exist, check if an exact match exists in PyPI.
+
+        :param str fullname: the fullname of the package
+        :returns: returns None if the distribution name is unknown, else
+        the distribution (install) name
         """
+        mapped_name = self._package_pypi_mapping_defined(fullname)
+        if mapped_name is not None:
+            return mapped_name
+
         # TODO maybe use xmlrpclib directly instead of going through pip? - see
         # https://wiki.python.org/moin/PyPIXmlRpc for a good example.
-
-        # TODO: use a pre-compiled mapping of import names
-        # to install names. Until then, going by exact matches
-        # will have to do
         searcher = self._search_command()
         options,args = searcher.parse_args([fullname])
         matches = searcher.search(args, options)
         found_match = None
         for match in matches:
             if match["name"] == fullname:
-                return True
+                return fullname
                 break
 
-        return False
+        return None
+
+    def _package_pypi_mapping_defined(self, fullname):
+        """Check the global pipless-mappings file as well as the user's
+        ~/.config/pipless/mappings file (if it exists) to see if a mapping
+        of the package name to the distribution name exists
+        """
+        return self._mapping.get(fullname)
 
 
 def _run_script(script_file):
@@ -500,67 +600,3 @@ def main(script_file=None, venv_path=None, gen_requirements=True, no_venv=False,
     # no arguments)
     else:
         _run_interactive_shell()
-
-
-# someone directly ran the pipless.py file, ran python with
-# "python -m pipless script_file [args...]", or ran the pipless
-# executable script. The latter is the intended usage.
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        __file__,
-        description=logo+"\n"+__doc__,
-        formatter_class=argparse.RawTextHelpFormatter
-    )
-    parser.add_argument("-n", "--no-venv",
-        help="don't use a virtual environment (maybe already in one?)",
-        action="store_true",
-        default=False
-    )
-    parser.add_argument("-v", "--venv",
-        help="the path to the virtualenv to be used/created",
-        default=None
-    )
-    parser.add_argument("-r", "--no-requirements",
-        help="do not a fresh requirements.txt before exiting",
-        action="store_false",
-        default=True
-    )
-    parser.add_argument("--debug",
-        help="show debug information while running",
-        action="store_true",
-        default=False
-    )
-    parser.add_argument("--quiet",
-        help="show no output while running",
-        action="store_true",
-        default=False
-    )
-    parser.add_argument("-p", "--python",
-        help="path to the python executable to use in the virtual environment",
-        action="store_true",
-        default=False
-    )
-    parser.add_argument("remainder",
-        help="script-specific arguments (not pipless arguments)",
-        nargs=argparse.REMAINDER
-    )
-    opts = parser.parse_args(sys.argv[1:])
-
-    script_file = None
-    if len(opts.remainder) > 0:
-        script_file = opts.remainder[0]
-        if not os.path.exists(script_file):
-            print("Error: {!r} does not exist".format(script_file))
-            sys.exit(1)
-
-    # hide pipless.py from the argument list
-    sys.argv[:] = opts.remainder
-
-    main(
-        script_file      = script_file,
-        venv_path        = opts.venv,
-        gen_requirements = opts.no_requirements,
-        no_venv          = opts.no_venv,
-        debug            = opts.debug,
-        quiet            = opts.quiet,
-    )
