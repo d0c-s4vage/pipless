@@ -62,14 +62,20 @@ import pip
 from pip.commands.search import SearchCommand
 import os
 import re
+import six
 import shutil
+import subprocess
 import sys
 
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 VENV_ACTIVATED = False
+
+
+class PiplessException(Exception): pass
+class IgnoreMissingImport(PiplessException): pass
 
 
 class PipLessMapping(object):
@@ -118,10 +124,17 @@ class PipLessMapping(object):
             
             # split on whitespace
             parts = line.split()
-            if len(parts) < 2:
+            if not parts[0].startswith("-") and len(parts) < 2:
                 continue
 
-            self.mapping[parts[0]] = parts[1]
+            if parts[0].startswith("-"):
+                package_name = parts[0][1:]
+                distro_name = IgnoreMissingImport
+            else:
+                package_name = parts[0]
+                distro_name = parts[1]
+
+            self.mapping[package_name] = distro_name
 
     def get(self, import_name):
         """Return the distribution name from the mapping for
@@ -129,7 +142,10 @@ class PipLessMapping(object):
 
         :param str import_name: The package name to look up the distribution name for
         """
-        return self.mapping.get(import_name, None)
+        res = self.mapping.get(import_name, None)
+        if res == IgnoreMissingImport:
+            raise IgnoreMissingImport()
+        return res
 
 
 class PipLess(object):
@@ -137,7 +153,19 @@ class PipLess(object):
     a virtual environment.
     """
 
-    def __init__(self, venv_path=None, quiet=True, no_venv=False, debug=False, requirements=True):
+    def __init__(
+            self,
+            venv_path    = None,
+            quiet        = True,
+            no_venv      = False,
+            debug        = False,
+            no_install   = False,
+            requirements = True,
+            venv_opts    = None,
+            python_opts  = None,
+            color        = False,
+            no_color     = False,
+        ):
         """Initialize the package auto-installer and setup the
         virtual environment (if it doesn't already exist).
         
@@ -149,10 +177,24 @@ class PipLess(object):
         :param bool quiet: do not print any output
         :param bool no_venv: do not create or activate a virtual environment
         :param bool debug: print verbose debug output
+        :param bool no_install: don't install anything, implies ``requirements=False``
         :param bool requirements: generate a requirements.txt on program exit
+        :param dict venv_opts: options for ``clear``, ``python``, and ``system_site_packages``
+        :param bool color_override: if ``True``, color will always be used in the output
         """
-        self.debug               = debug
+        if venv_opts is None:
+            venv_opts = {}
+        self.venv_opts = venv_opts
+        self.venv_clear = venv_opts.get("clear", False)
+        self.venv_system_site_packages = venv_opts.get("system_site_packages", False)
+        self.venv_python = venv_opts.get("python", None)
 
+        if python_opts is None:
+            python_opts = {}
+        self.python_opts = python_opts
+
+        self.no_install          = no_install
+        self.debug               = debug
         self.venv_home           = venv_path
         if self.venv_home is not None:
             self.venv_home       = os.path.abspath(venv_path)
@@ -162,6 +204,8 @@ class PipLess(object):
         self.no_venv             = no_venv
         self.quiet               = quiet
         self.no_requirements     = (not requirements)
+        self.no_color            = no_color
+        self.color               = color
 
         if requirements:
             atexit.register(self._on_exit)
@@ -185,12 +229,15 @@ class PipLess(object):
         )
 
         self._debug("created new PipLess")
-        self._debug("    debug           : {}".format(self.debug))
-        self._debug("    venv_home       : {}".format(self.venv_home))
-        self._debug("    venv_parent_dir : {}".format(self.venv_parent_dir))
-        self._debug("    no_venv         : {}".format(self.no_venv))
-        self._debug("    quiet           : {}".format(self.quiet))
-
+        self._debug("    debug                       : {}".format(self.debug))
+        self._debug("    venv_home                   : {}".format(self.venv_home))
+        self._debug("    venv_parent_dir             : {}".format(self.venv_parent_dir))
+        self._debug("    no_venv                     : {}".format(self.no_venv))
+        self._debug("    quiet                       : {}".format(self.quiet))
+        self._debug("    venv --clear                : {}".format(self.venv_clear))
+        self._debug("    venv --python               : {}".format(self.venv_python))
+        self._debug("    venv --system-site-packages : {}".format(self.venv_system_site_packages))
+        self._debug("    python opts: {}".format(self.python_opts))
 
         if not no_venv:
             self._create_virtual_env()
@@ -230,12 +277,27 @@ class PipLess(object):
         print("\n".join("[PIPLESS]:INF {}".format(x) for x in msg.split("\n")))
         self._sys.stdout.flush()
 
+    def _should_color(self):
+        return (sys.stdout.isatty() or self.color) and not self.no_color
+
     def _debug(self, msg):
         if self.quiet:
             return
 
+        if self._should_color():
+            # yellow
+            color_start = "\x1b[34m"
+            color_end = "\x1b[0m"
+        else:
+            color_start = ""
+            color_end = ""
+
         if self.debug:
-            print("\n".join("[PIPLESS]:DBG: {}".format(x) for x in msg.split("\n")))
+            print(
+                color_start + \
+                "\n".join("[PIPLESS]:DBG: {}".format(x) for x in msg.split("\n")) + \
+                color_end
+            )
             self._sys.stdout.flush()
 
     def activate(self):
@@ -273,6 +335,22 @@ class PipLess(object):
             new_args.append("--quiet")
         if self.no_requirements:
             new_args.append("--no-requirements")
+        if self.venv_clear:
+            new_args.append("--clear")
+        if self._should_color():
+            new_args.append("--color")
+        if self.venv_system_site_packages:
+            new_args.append("--system-site-packages")
+        if self.venv_python is not None:
+            new_args.append("--python")
+            new_args.append(self.venv_python)
+
+        if self.python_opts.get("module", None) is not None:
+            new_args.append("-m")
+            new_args.append(self.python_opts.get("module"))
+        if self.python_opts.get("cmd", None) is not None:
+            new_args.append("-c")
+            new_args.append(self.python_opts.get("cmd"))
 
         os.execve(
             venv_python_path,
@@ -287,22 +365,43 @@ class PipLess(object):
         the new virtual environment (the new virtual environment should use
         the same version of pipless as the previou environment).
         """
-        if os.path.exists(self.venv_home):
+        if os.path.exists(self.venv_home) and self.venv_clear == False:
+            self._debug("virtualenv already exists at '{}' and --clear was not set".format(
+                self.venv_home
+            ))
             return
 
         import virtualenv
         self._debug("creating virtual environment at {}".format(self.venv_home))
-        virtualenv.create_environment(
-            self.venv_home,
-            site_packages = False,
-            clear         = True
-        )
+
+        venv_args = ["virtualenv"]
+
+        if self.venv_clear:
+            venv_args.append("--clear")
+        if self.venv_system_site_packages:
+            venv_args.append("--system-site-packages")
+        if self.venv_python:
+            venv_args.append("--python")
+            venv_args.append(self.venv_python)
+
+        venv_args.append(self.venv_home)
+
+        self._debug("executing virtualenv: {}".format(venv_args))
+        proc = subprocess.Popen(venv_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout,_ = proc.communicate()
+        if proc.poll() != 0:
+            raise Exception("Error creating the virtual environment!\n\n{}" + stdout)
 
         site_packages_dirs = []
         for root, dirnames, filesnames in os.walk(self.venv_home):
             for dirname in dirnames:
                 if dirname == "site-packages":
                     site_packages_dirs.append(os.path.join(root, dirname))
+
+        self._debug("copying six module into virtual env")
+        six_file = six.__file__.replace(".pyc", ".py")
+        dest_six_file = os.path.join(site_packages_dirs[0], "six.py")
+        shutil.copy(six_file, dest_six_file)
 
         self._debug("copying 'bin/pipless' into virtual env")
         shutil.copy(self._which("pipless"), os.path.join(self.venv_home, "bin", "pipless"))
@@ -384,25 +483,53 @@ class PipLess(object):
             # it's already accessible, we don't need to do anything
             return None
 
-        if self._get_pypi_distro_name(fullname):
+        try:
+            distro_name = self._get_pypi_distro_name(fullname)
+        except IgnoreMissingImport:
+            self._debug("told to ignore '{}' import, ignoring".format(fullname))
+            return None
+
+        if distro_name is not None:
+            stack = inspect.stack()
+            last_frame = stack[1]
+            self._debug("import from {}:{} ({!r})".format(
+                last_frame[1], last_frame[2], last_frame[4]
+            ))
             self._debug("module {} exists in pypi, installing".format(fullname))
-
-            if self.quiet:
-                import logging
-                pip_log = logging.getLogger("pip")
-                _level = pip_log.level
-                pip_log.setLevel(logging.CRITICAL)
-
-            try:
-                self._pip.main(["install", fullname])
-            finally:
-                if self.quiet:
-                    pip_log.setLevel(_level)
+            self._pip_main("install", fullname)
 
         # we've made it accessible to the normal import procedures
         # now, (should be on sys.path), so we'll return None which
         # will make Python attempt a normal import
         return None
+    
+    def install_requirements(self, requirements_path):
+        """Install the requirements file at ``requirements_path`` into the current environment
+
+        :param str requirements_path: The path to the requirements file to install
+        """
+        self._debug("installing requirements file at {}".format(requirements_path))
+        self._pip_main("install", "-r", requirements_path)
+
+    def _pip_main(self, *args):
+        """Run pip.main with the specified ``args``
+        """
+        if self.quiet:
+            import logging
+            pip_log = logging.getLogger("pip")
+            _level = pip_log.level
+            pip_log.setLevel(logging.CRITICAL)
+        elif self._should_color():
+            self._sys.stdout.write("\x1b[36m")
+
+        try:
+            self._pip.main(list(args))
+        finally:
+            if self.quiet:
+                pip_log.setLevel(_level)
+            elif self._should_color():
+                self._sys.stdout.write("\x1b[0m")
+                self._sys.stdout.flush()
 
     def _get_pypi_distro_name(self, fullname):
         """Lookup a mapping for the import name ``fullname`` in the
@@ -435,7 +562,12 @@ class PipLess(object):
         ~/.config/pipless/mappings file (if it exists) to see if a mapping
         of the package name to the distribution name exists
         """
-        return self._mapping.get(fullname)
+        res = self._mapping.get(fullname)
+        if res is not None:
+            self._debug("found mapping! {} <-> {}".format(
+                fullname, res
+            ))
+        return res
 
 
 def _run_script(script_file):
@@ -464,6 +596,74 @@ def _run_script(script_file):
     exec 'execfile({})'.format(repr(script_file)) in globals, locals
 
 
+def _run_single_command(cmd):
+    """Run a single command inside the virtual environment
+    """
+    builtins = __builtins__
+
+    # this is how the python -c command works
+    sys.argv.insert(0, "-c")
+
+    import __main__
+    __main__.__dict__.clear()
+    __main__.__dict__.update(dict(
+        __name__     = "__main__",
+
+        # file is not defined when 'python -c "print(__file__)"' is run
+        #__file__     = script_file,
+
+        __builtins__ = builtins
+    ))
+    globals = __main__.__dict__
+    locals = globals
+
+    code = compile(cmd, "<string>", "single")
+    exec code in globals, locals
+
+
+def _find_module_path(module_name, mod_path=None):
+    """Recursively find the module path. ImportError will
+    be raised if the module cannot be found.
+    """
+    parts = module_name.split(".")
+
+    find_args = [parts[0]]
+    if mod_path is not None:
+        find_args.append([mod_path])
+
+    file_,mod_path,desc = imp.find_module(*find_args)
+
+    if len(parts) > 1:
+        return _find_module_path(".".join(parts[1:]), mod_path)
+
+    return mod_path
+
+
+def _run_python_module(module_name):
+    """Run a python module (just like python -m modulename)
+    """
+    try:
+        mod_path = _find_module_path(module_name)
+    except ImportError as e:
+        sys.stderr.write("{}: No module named {}\n".format(__file__, module_name))
+        exit(1)
+
+    if os.path.isfile(mod_path):
+        sys.argv.insert(0, mod_path)
+        _run_script(mod_path)
+        return
+
+    elif os.path.isdir(mod_path):
+        # TODO what if it's just a .pyc file? that should work, right?
+        main_file = os.path.join(mod_path, "__main__.py")
+        if not os.path.exists(main_file):
+            sys.stderr.write("{}: No module named {}.__main__\n".format(__file__, module_name))
+
+        sys.argv.insert(0, main_file)
+        _run_script(main_file)
+        return
+
+
 def _run_interactive_shell():
     """Run an interactive shell as if it were the first thing being
     run.
@@ -485,7 +685,7 @@ def _run_interactive_shell():
     code_.interact()
 
 
-def _find_venv(start_dir):
+def _find_file(file_name, start_dir):
     """Recursively search upwards in the directory tree until a
     venv folder is located. If not found, None is returned
 
@@ -494,7 +694,7 @@ def _find_venv(start_dir):
     venv_path = None
     curr_path = os.path.abspath(start_dir)
     while True:
-        test_path = os.path.join(curr_path, "venv")
+        test_path = os.path.join(curr_path, file_name)
         if os.path.exists(test_path):
             venv_path = test_path
             break
@@ -506,7 +706,14 @@ def _find_venv(start_dir):
     return venv_path
 
 
-def init(gen_requirements=True, debug=False, quiet=False):
+def init(
+        gen_requirements     = True,
+        debug                = False,
+        quiet                = False,
+        clear                = False,
+        system_site_packages = False,
+        python               = None
+    ):
     """Init pipless to work in the currently-running python script.
 
     Note that it is assumed that the currently-running script is already
@@ -524,6 +731,9 @@ def init(gen_requirements=True, debug=False, quiet=False):
     :param bool gen_requirements: generate a new requirements.txt before exiting 
     :param bool debug: print all debug statements
     :param bool quiet: print nothing
+    :param bool clear: if virtualenv should be run with --clear
+    :param bool system_site_packages: if virtualenv should be run with --system-site-packages
+    :param str python: the path to the python executable to use in the virtual environment.
     """
     currframe = inspect.currentframe()
     calling_frame_info = inspect.getouterframes(currframe, 2)[1]
@@ -533,13 +743,37 @@ def init(gen_requirements=True, debug=False, quiet=False):
         no_venv      = True,
         debug        = debug,
         requirements = gen_requirements,
-        quiet        = quiet
+        quiet        = quiet,
+        venv_opts    = dict(
+            clear                = clear,
+            system_site_packages = system_site_packages,
+            python               = python
+        ),
     )
     # NOTE: do not activate it!
     sys.meta_path.append(pipless_import_hook)
 
 
-def main(script_file=None, venv_path=None, gen_requirements=True, no_venv=False, debug=False, quiet=False):
+# TODO it might be time to pull all of these options out into
+# a generic **kwargs dict and set defaults on them. Not my favorite,
+# as it's easy to get out of sync with the documentation though.
+def main(
+        script_file               = None,
+        venv_path                 = None,
+        gen_requirements          = True,
+        no_venv                   = False,
+        debug                     = False,
+        quiet                     = False,
+        no_install                = False,
+        color                     = False,
+        no_color                  = False,
+        no_auto_requirements      = False,
+        python_cmd                = None,
+        python_module             = None,
+        venv_clear                = False,
+        venv_python               = None,
+        venv_system_site_packages = False,
+    ):
     """Find or create a virtual environment, setup the automatic
     importer, and run an interactive shell or a script at the provided path.
 
@@ -567,16 +801,27 @@ def main(script_file=None, venv_path=None, gen_requirements=True, no_venv=False,
     :param bool gen_requirements: If a requirements.txt should be generated at process exit.
     :param bool no_venv: If a virtual environment should not be created/activated.
     :param bool debug: Display verbose debug statements
+    :param bool no_install: Don't install anything, only use the virtual environment. Implies ``gen_requirements=False``
     :param bool quiet: Do not display any text while executing
+    :param bool color: Always use color in the output (default only when a tty is attached)
+    :param bool no_color: Never use color in the output
+    :param bool no_auto_requirements: Don't auto-install a requirements.txt file if found
+    :param str python_module: The python module to run as a script (just like python -m)
+    :param str python_cmd: The single python command to run (just like python -c)
+    :param bool venv_clear: Clear out the virtual environment and start over (virtualenv --clear)
+    :param str venv_python: The python executable to use (virtualenv --python)
+    :param bool venv_system_site_packages: Use system site packages when create the virtual environment (virtualenv --system-site-packages)
     """
+    script_dir = os.getcwd()
     if script_file is not None:
         # Replace pipless's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(script_file)
+        script_dir = os.path.dirname(script_file)
+        sys.path[0] = script_dir
 
         if venv_path is None:
             # if we're running a script file through pipless, search from the script's
             # directory, not the cwd
-            venv_path = _find_venv(sys.path[0])
+            venv_path = _find_file("venv", script_dir)
             if venv_path is None:
                 venv_path = os.path.join(os.path.dirname(script_file), "venv")
 
@@ -588,16 +833,41 @@ def main(script_file=None, venv_path=None, gen_requirements=True, no_venv=False,
         no_venv      = no_venv,
         debug        = debug,
         quiet        = quiet,
-        requirements = gen_requirements
+        requirements = gen_requirements,
+        no_install   = no_install,
+        color        = color,
+        no_color     = no_color,
+        venv_opts    = dict(
+            clear                = venv_clear,
+            python               = venv_python,
+            system_site_packages = venv_system_site_packages
+        ),
+        python_opts = dict(
+            module = python_module,
+            cmd    = python_cmd
+        )
     )
     pipless_import_hook.activate()
 
-    # setup the automatic imports using the venv_path
-    sys.meta_path.append(pipless_import_hook)
+    if not no_auto_requirements:
+        requirements_path = _find_file("requirements.txt", script_dir)
+        if requirements_path is not None:
+            # at this point we should be in the virtual environment, so
+            # go ahead and install
+            pipless_import_hook.install_requirements(requirements_path)
+
+    if not no_install:
+        # setup the automatic imports using the venv_path
+        sys.meta_path.append(pipless_import_hook)
 
     if script_file is not None:
-        # run the script
         _run_script(script_file)
+
+    elif python_cmd is not None:
+        _run_single_command(python_cmd)
+
+    elif python_module is not None:
+        _run_python_module(python_module)
 
     # drop into an interactive shell (just as you would run running python with
     # no arguments)
