@@ -68,7 +68,7 @@ import subprocess
 import sys
 
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 VENV_ACTIVATED = False
@@ -496,27 +496,40 @@ class PipLess(object):
                 last_frame[1], last_frame[2], last_frame[4]
             ))
             self._debug("module {} exists in pypi, installing".format(fullname))
-
-            if self.quiet:
-                import logging
-                pip_log = logging.getLogger("pip")
-                _level = pip_log.level
-                pip_log.setLevel(logging.CRITICAL)
-            elif self._should_color():
-                self._sys.stdout.write("\x1b[36m")
-
-            try:
-                self._pip.main(["install", fullname])
-            finally:
-                if self.quiet:
-                    pip_log.setLevel(_level)
-                elif self._should_color():
-                    self._sys.stdout.write("\x1b[0m")
+            self._pip_main("install", fullname)
 
         # we've made it accessible to the normal import procedures
         # now, (should be on sys.path), so we'll return None which
         # will make Python attempt a normal import
         return None
+    
+    def install_requirements(self, requirements_path):
+        """Install the requirements file at ``requirements_path`` into the current environment
+
+        :param str requirements_path: The path to the requirements file to install
+        """
+        self._debug("installing requirements file at {}".format(requirements_path))
+        self._pip_main("install", "-r", requirements_path)
+
+    def _pip_main(self, *args):
+        """Run pip.main with the specified ``args``
+        """
+        if self.quiet:
+            import logging
+            pip_log = logging.getLogger("pip")
+            _level = pip_log.level
+            pip_log.setLevel(logging.CRITICAL)
+        elif self._should_color():
+            self._sys.stdout.write("\x1b[36m")
+
+        try:
+            self._pip.main(list(args))
+        finally:
+            if self.quiet:
+                pip_log.setLevel(_level)
+            elif self._should_color():
+                self._sys.stdout.write("\x1b[0m")
+                self._sys.stdout.flush()
 
     def _get_pypi_distro_name(self, fullname):
         """Lookup a mapping for the import name ``fullname`` in the
@@ -672,7 +685,7 @@ def _run_interactive_shell():
     code_.interact()
 
 
-def _find_venv(start_dir):
+def _find_file(file_name, start_dir):
     """Recursively search upwards in the directory tree until a
     venv folder is located. If not found, None is returned
 
@@ -681,7 +694,7 @@ def _find_venv(start_dir):
     venv_path = None
     curr_path = os.path.abspath(start_dir)
     while True:
-        test_path = os.path.join(curr_path, "venv")
+        test_path = os.path.join(curr_path, file_name)
         if os.path.exists(test_path):
             venv_path = test_path
             break
@@ -754,6 +767,7 @@ def main(
         no_install                = False,
         color                     = False,
         no_color                  = False,
+        no_auto_requirements      = False,
         python_cmd                = None,
         python_module             = None,
         venv_clear                = False,
@@ -791,20 +805,23 @@ def main(
     :param bool quiet: Do not display any text while executing
     :param bool color: Always use color in the output (default only when a tty is attached)
     :param bool no_color: Never use color in the output
+    :param bool no_auto_requirements: Don't auto-install a requirements.txt file if found
     :param str python_module: The python module to run as a script (just like python -m)
     :param str python_cmd: The single python command to run (just like python -c)
     :param bool venv_clear: Clear out the virtual environment and start over (virtualenv --clear)
     :param str venv_python: The python executable to use (virtualenv --python)
     :param bool venv_system_site_packages: Use system site packages when create the virtual environment (virtualenv --system-site-packages)
     """
+    script_dir = os.getcwd()
     if script_file is not None:
         # Replace pipless's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(script_file)
+        script_dir = os.path.dirname(script_file)
+        sys.path[0] = script_dir
 
         if venv_path is None:
             # if we're running a script file through pipless, search from the script's
             # directory, not the cwd
-            venv_path = _find_venv(sys.path[0])
+            venv_path = _find_file("venv", script_dir)
             if venv_path is None:
                 venv_path = os.path.join(os.path.dirname(script_file), "venv")
 
@@ -831,6 +848,13 @@ def main(
         )
     )
     pipless_import_hook.activate()
+
+    if not no_auto_requirements:
+        requirements_path = _find_file("requirements.txt", script_dir)
+        if requirements_path is not None:
+            # at this point we should be in the virtual environment, so
+            # go ahead and install
+            pipless_import_hook.install_requirements(requirements_path)
 
     if not no_install:
         # setup the automatic imports using the venv_path
