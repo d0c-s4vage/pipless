@@ -51,7 +51,7 @@ setup(
     url              = 'https://github.com/d0c-s4vage/pipless',
     platforms        = 'Cross Platform',
 	download_url     = "https://github.com/d0c-s4vage/pipless/tarball/v0.1.2",
-	install_requires = ["virtualenv"],
+	install_requires = ["virtualenv", "six"],
     packages         = ['pipless'],
     classifiers      = [
         'Programming Language :: Python :: 2',
