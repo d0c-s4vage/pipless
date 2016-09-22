@@ -51,6 +51,11 @@ if __name__ == "__main__":
         formatter_class = argparse.RawTextHelpFormatter,
     )
 
+    parser.add_argument("--version",
+        help    = "show the version of pipless being run",
+        action  = "version",
+        version = pipless.__version__
+    )
     parser.add_argument("-n", "--no-venv",
         help    = "don't use a virtual environment (maybe already in one?)",
         action  = "store_true",
