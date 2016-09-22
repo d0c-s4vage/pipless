@@ -90,6 +90,11 @@ if __name__ == "__main__":
         action  = "store_true",
         default = False
     )
+    parser.add_argument("--no-auto-requirements",
+        help    = "Don't auto-install a requirements.txt if found",
+        action  = "store_true",
+        default = False
+    )
     parser.add_argument("remainder",
         help  = "script-specific arguments (not pipless arguments)",
         nargs = argparse.REMAINDER
