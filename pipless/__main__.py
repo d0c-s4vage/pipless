@@ -60,7 +60,7 @@ if __name__ == "__main__":
         help    = "the path to the virtualenv to be used/created",
         default = None
     )
-    parser.add_argument("-r", "--no-requirements",
+    parser.add_argument("--no-requirements",
         help    = "do not a fresh requirements.txt before exiting",
         action  = "store_false",
         default = True
@@ -72,6 +72,21 @@ if __name__ == "__main__":
     )
     parser.add_argument("--quiet",
         help    = "show no output while running",
+        action  = "store_true",
+        default = False
+    )
+    parser.add_argument("--no-install",
+        help    = "don't install anything, only activate the virtual environment. Implies --no-requirements",
+        action  = "store_true",
+        default = False
+    )
+    parser.add_argument("--no-color",
+        help    = "Never colorize the output",
+        action  = "store_true",
+        default = False
+    )
+    parser.add_argument("--color",
+        help    = "Always colorize the output",
         action  = "store_true",
         default = False
     )
@@ -138,6 +153,9 @@ site-packages.""",
         no_venv          = opts.no_venv,
         debug            = opts.debug,
         quiet            = opts.quiet,
+        no_install       = opts.no_install,
+        color            = opts.color,
+        no_color         = opts.no_color,
 
         # python-specific arguments
         python_module    = opts.python_module,
